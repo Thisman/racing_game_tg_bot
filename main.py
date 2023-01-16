@@ -1,12 +1,10 @@
 import sys
-import hashlib
 
 from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types import InlineQuery, \
-    InputTextMessageContent, InlineQueryResultArticle
 
 from player import register_player
-from game import create_game, end_game, join_to_game, leave_from_game
+from game import create_game, end_game, join_to_game, \
+    leave_from_game, spin_in_game
 
 if(len(sys.argv) == 1):
     print('Не передан токен для авторизации')
@@ -45,7 +43,7 @@ async def info(message: types.Message):
 
 @dp.message_handler(commands=['register'])
 async def register(message: types.Message):
-    [is_success, error] = register_player(message.from_user.id)
+    [is_success, error] = register_player(message.from_user)
     if (is_success is False):
         await message.reply(
             f'<i>{error}</i>',
@@ -106,6 +104,17 @@ async def spin(message: types.Message):
         '<i>Начинаю игру</i>',
         parse_mode=types.ParseMode.HTML
     )
+    [result, error] = spin_in_game(message.from_user.id, message.chat.id)
+    if (result is False):
+        await message.reply(
+            f'<i>{error}</i>',
+            parse_mode=types.ParseMode.HTML
+        )
+    else:
+        await message.reply(
+            f'<i>Игра окончена\n{result} </i>',
+            parse_mode=types.ParseMode.HTML
+        )
 
 @dp.message_handler(commands=['stop'])
 async def stop(message: types.Message):
@@ -120,45 +129,6 @@ async def stop(message: types.Message):
             '<i>Активная игра в чате остановлена</i>',
             parse_mode=types.ParseMode.HTML
         )
-
-
-@dp.inline_handler()
-async def inline_echo(inline_query: InlineQuery):
-    text = inline_query.query
-    match text:
-        case 'register':
-            input_content = InputTextMessageContent('/register')
-            command = 'Создать нового игрока'
-        case 'create':
-            input_content = InputTextMessageContent('/create')
-            command = 'Создать игру'
-        case 'join':
-            input_content = InputTextMessageContent('/join')
-            command = 'Вступить в игру'
-        case 'leave':
-            input_content = InputTextMessageContent('/leave')
-            command = 'Покинуть игру'
-        case 'spin':
-            input_content = InputTextMessageContent('/spin')
-            command = 'Запустить игру'
-        case 'stop':
-            input_content = InputTextMessageContent('/stop')
-            command = 'Остановить и удалить игру'
-        case _:
-            input_content = None
-            command = ''
-    
-    if(input_content is None):
-        return
-
-    result_id: str = hashlib.md5(text.encode()).hexdigest()
-    item = InlineQueryResultArticle(
-        id=result_id,
-        title=command,
-        input_message_content=input_content,
-    )
-    # don't forget to set cache_time=1 for testing (default is 300s or 5m)
-    await bot.answer_inline_query(inline_query.id, results=[item], cache_time=1)
 
 
 if __name__ == '__main__':
