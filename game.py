@@ -40,6 +40,9 @@ def join_to_game(id, chat_id):
     if (chat_id > 0):
         return [False, 'Нельзя входить в игру не в чате!']
 
+    [existing_player, _] = get_player(id)
+    if (existing_player is None):
+        return [False, 'Нельзя войти в игру не зарегистрированному игроку. Для регистрации введите команду /register']
 
     active_game_in_chat = games_collection.find_one({ 'chat_id': chat_id, 'status': 'active' })
     if (active_game_in_chat is None):
