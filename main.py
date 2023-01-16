@@ -6,7 +6,7 @@ from aiogram.types import InlineQuery, \
     InputTextMessageContent, InlineQueryResultArticle
 
 from player import register_player
-from game import create_game, end_game
+from game import create_game, end_game, join_to_game, leave_from_game
 
 if(len(sys.argv) == 1):
     print('Не передан токен для авторизации')
@@ -74,17 +74,31 @@ async def create(message: types.Message):
 
 @dp.message_handler(commands=['join'])
 async def join(message: types.Message):
-    await message.reply(
-        '<i>Добавляю игрока в игру</i>',
-        parse_mode=types.ParseMode.HTML
-    )
+    [is_success, error] = join_to_game(message.from_user.id, message.chat.id)
+    if (is_success is False):
+        await message.reply(
+            f'<i>{error}</i>',
+            parse_mode=types.ParseMode.HTML
+        )
+    else:
+        await message.reply(
+            f'<i>Игрок {message.from_user.full_name} вошел в игру</i>',
+            parse_mode=types.ParseMode.HTML
+        )
 
 @dp.message_handler(commands=['leave'])
 async def leave(message: types.Message):
-    await message.reply(
-        '<i>Исключаю игрока из игры</i>',
-        parse_mode=types.ParseMode.HTML
-    )
+    [is_success, error] = leave_from_game(message.from_user.id, message.chat.id)
+    if (is_success is False):
+        await message.reply(
+            f'<i>{error}</i>',
+            parse_mode=types.ParseMode.HTML
+        )
+    else:
+        await message.reply(
+            f'<i>Игрок {message.from_user.full_name} вышел из игры</i>',
+            parse_mode=types.ParseMode.HTML
+        )
 
 @dp.message_handler(commands=['spin'])
 async def spin(message: types.Message):
