@@ -1,29 +1,32 @@
-"""
-_id: number
-id: number
-name: string
-bank: number
-"""
-
 from aiogram import types
 
 from db import players_collection
+from error import GameError, ERROR_PLAYER_ALREADY_EXIST, ERROR_PLAYER_NOT_EXIST
 
-def register_player(player: types.User):
-    existing_player = players_collection.find_one({ 'id': player.id })
+class Player:
+    id: int
+    name: str
+    bank: int
+
+def register_player(user: types.User) -> None:
+    existing_player = players_collection.find_one({ 'id': user.id })
     if (existing_player is not None):
-        return [False, 'Игрок уже существует!']
+        raise GameError(ERROR_PLAYER_ALREADY_EXIST)
 
     players_collection.insert_one({
-        'id': player.id,
-        'name': player.full_name,
+        'id': user.id,
+        'name': user.full_name,
         'bank': 100,
     })
-    return [True, None]
 
-def get_player(id):
-    existing_player = players_collection.find_one({ 'id': id })
-    if (existing_player is None):
-        return [None, 'Ошибка! Игрока не существует']
+def get_player(id) -> Player:
+    player = players_collection.find_one({ 'id': id })
+    if (player is None):
+        raise GameError(ERROR_PLAYER_NOT_EXIST)
+    
+    return player
 
-    return [existing_player, None]
+def update_player(player: Player, data):
+    players_collection.update_one({ 'id': player['id'] }, {
+        '$set': data,
+    })

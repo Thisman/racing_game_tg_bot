@@ -1,127 +1,148 @@
-"""
-_id: number
-chat_id: number
-creator: number
-time_create: date
-players: number[]
-status: active | process | finished
-result: string
-"""
-
 import random
 from datetime import datetime
 
 from db import games_collection
-from player import get_player
+from player import Player, get_player, update_player
+from error import GameError, ERROR_COMMAND_NOT_IN_CHAT, \
+    ERROR_GAME_ALREADY_EXIST, ERROR_GAME_NOT_EXIST, ERROR_PLAYER_ALREADY_IN_GAME, \
+    ERROR_PLAYER_NOT_IN_GAME, ERROR_PLAYER_NOT_ACCESS, ERROR_GAME_NOT_ENOUGH_PLAYERS
 
-def create_game(id, chat_id):
+class GameResult:
+    player: Player
+    is_winner: bool
+    value: int
+
+class Game:
+    chat_id: int
+    creator: int
+    players: list[int]
+    status: str
+    result: list[GameResult]
+    time_create: datetime
+
+
+def check_is_command_valid(chat_id: int):
     if (chat_id > 0):
-        return [False, 'Нельзя создать игру не в чате!']
+        raise GameError(ERROR_COMMAND_NOT_IN_CHAT)
 
-    active_game_in_chat = games_collection.find_one({ 'chat_id': chat_id, 'status': { '$in': ['active', 'process'] } })
-    if (active_game_in_chat is not None):
-        return [False, 'В чате уже есть активная игра! Закончите ее командой /stop']
-    
-    [existing_player, _] = get_player(id)
-    if (existing_player is None):
-        return [False, 'Нельзя создать игру не зарегистрированному игроку. Для регистрации введите команду /register']
-
+def create_new_game(creator: Player, chat_id: int):
     games_collection.insert_one({
         'chat_id': chat_id,
-        'creator': id,
+        'creator': creator['id'],
         'time_create': datetime.now(),
-        'players': [id],
+        'players': [creator['id']],
         'status': 'active',
         'result': '',
     })
-    return [True, None]
 
-def join_to_game(id, chat_id):
-    if (chat_id > 0):
-        return [False, 'Нельзя входить в игру не в чате!']
+def update_game(game_id: int, data):
+    games_collection.update_one({ '_id': game_id }, {
+        '$set': data,
+    })
 
-    [existing_player, _] = get_player(id)
-    if (existing_player is None):
-        return [False, 'Нельзя войти в игру не зарегистрированному игроку. Для регистрации введите команду /register']
+def get_active_game(chat_id: int) -> Game | None:
+    return games_collection.find_one({ 'chat_id': chat_id, 'status': 'active' })
 
-    active_game_in_chat = games_collection.find_one({ 'chat_id': chat_id, 'status': 'active' })
-    if (active_game_in_chat is None):
-        return [False, 'Нет активной игры! Чтобы начать игру вызовите команду /create']
+def get_game_result(game: Game) -> list[GameResult]:
+    results: list[GameResult] = []
+    for id in game['players']:
+        player = get_player(id)
+        results.append({ 'player': player, 'value': random.randint(0, 10), 'is_winner': False })
 
-    if(id in active_game_in_chat['players']):
-        return [False, 'Игрок уже в игре!']
+    results.sort(key=lambda player: player['value'], reverse=True)
+    winner = results[0]
+    for result in results:
+        if (result['value'] == winner['value']):
+            result['is_winner'] = True
+
+    return results
+
+
+def command_create_game(player: Player, chat_id: int):
+    check_is_command_valid(chat_id)
+
+    game = get_active_game(chat_id)
+    if (game is not None):
+        raise GameError(ERROR_GAME_ALREADY_EXIST)
     
-    games_collection.update_one({ '_id': active_game_in_chat['_id'] }, {
-        '$set': {
-            'players': active_game_in_chat['players'] + [id]
-        }
-    })
-    return [True, None]
+    create_new_game(player, chat_id)
 
-def leave_from_game(id, chat_id):
-    if (chat_id > 0):
-        return [False, 'Нельзя покидать игру не в чате!']
+def command_join_to_game(player: Player, chat_id: int):
+    check_is_command_valid(chat_id)
 
-    active_game_in_chat = games_collection.find_one({ 'chat_id': chat_id, 'status': 'active' })
-    if (active_game_in_chat is None):
-        return [False, 'Нет активной игры! Чтобы начать игру вызовите команду /create']
+    game = get_active_game(chat_id)
+    if (game is None):
+        raise GameError(ERROR_GAME_NOT_EXIST)
 
-    if(id not in active_game_in_chat['players']):
-        return [False, 'Игрок уже не в игре!']
+    if(player['id'] in game['players']):
+        raise GameError(ERROR_PLAYER_ALREADY_IN_GAME)
     
-    games_collection.update_one({ '_id': active_game_in_chat['_id'] }, {
-        '$set': {
-            'players': list(filter(lambda player: player != id, active_game_in_chat['players']))
-        }
-    })
-    return [True, None]
-
-def spin_in_game(id, chat_id):
-    active_game_in_chat = games_collection.find_one({ 'chat_id': chat_id, 'status': 'active' })
-    if (active_game_in_chat is None):
-        return [False, 'Нет ни одной активной игры в чате!']
-
-    # if (len(active_game_in_chat['players']) <= 1):
-    #     return [False, 'Нельзя начать игру, когда в ней один или меньше игроков!']
-
-    games_collection.update_one({ '_id': active_game_in_chat['_id'] }, {
-        '$set': {
-            'status': 'process'
-        }
+    update_game(game['_id'], {
+        'players': game['players'] + [player['id']]
     })
 
-    results = []
-    for id in active_game_in_chat['players']:
-        [player, _] = get_player(id)
-        if (player is not None):
-            results.append({ 'player': player['name'], 'result': random.randint(0, 10) })
 
-    results.sort(key=lambda player: player['result'], reverse=True)
-    result_table = '\n'.join(map(lambda result: f'Игрок: {result["player"]} - {result["result"]}', results))
-    result_str = f'''
-Результаты:
-{result_table}
-    '''
+def command_leave_from_game(player: Player, chat_id: int):
+    check_is_command_valid(chat_id)
 
-    games_collection.update_one({ '_id': active_game_in_chat['_id'] }, {
-        '$set': {
-            'status': 'finished',
-            'result': result_str,
-        }
+    game = get_active_game(chat_id)
+    if (game is None):
+        raise GameError(ERROR_GAME_NOT_EXIST)
+
+    if(player['id'] not in game['players']):
+        raise GameError(ERROR_PLAYER_NOT_IN_GAME)
+
+    update_game(game['_id'], {
+        'players': list(filter(lambda id: id != player['id'], game['players']))
     })
-    return [result_str, None]
 
-def end_game(id, chat_id):
-    active_game_in_chat = games_collection.find_one({ 'chat_id': chat_id, 'status': 'active' })
-    if (active_game_in_chat is None):
-        return [False, 'Нет ни одной активной игры в чате!']
+def command_spin_in_game(player: Player, chat_id: int) -> list[GameResult]:
+    check_is_command_valid(chat_id)
 
-    if (active_game_in_chat['creator'] != id):
-        return [False, 'Вы не можете остановить игру, в которой не являетесь создателем!']
+    game = get_active_game(chat_id)
+    if (game is None):
+        raise GameError(ERROR_GAME_NOT_EXIST)
 
-    games_collection.update_one({ '_id': active_game_in_chat['_id'] }, {
-        '$set': {
-            'status': 'finished'
-        }
+    if(player['id'] not in game['players']):
+        raise GameError(ERROR_PLAYER_NOT_IN_GAME)
+
+    if (len(game['players']) <= 1):
+        raise GameError(ERROR_GAME_NOT_ENOUGH_PLAYERS)
+
+    update_game(game['_id'], {
+        'status': 'process'
     })
-    return [True, None]
+
+    game_results = get_game_result(game)
+    winners_len = len(list(filter(lambda data: data['is_winner'], game_results)))
+    for result in game_results:
+        player = result['player']
+        if (result['is_winner']):
+            update_player(player, {
+                'bank': player['bank'] + round((10 * (len(game_results) - 1)) / winners_len)
+            })
+        else:
+            update_player(player, {
+                'bank': player['bank'] - 10
+            })
+
+    update_game(game['_id'], {
+        'status': 'finished',
+        'result': game_results,
+    })
+
+    return game_results
+
+def command_end_game(player: Player, chat_id: int):
+    check_is_command_valid(chat_id)
+
+    game = get_active_game(chat_id)
+    if (game is None):
+        raise GameError(ERROR_GAME_NOT_EXIST)
+
+    if (game['creator'] != player['id']):
+        raise GameError(ERROR_PLAYER_NOT_ACCESS)
+
+    update_game(game['_id'], {
+        'status': 'finished'
+    })
