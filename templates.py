@@ -9,7 +9,7 @@ def get_start_template_str():
 
 <b>Правила</b>:
 1. Каждому участнику случайно выбирается число
-2. Побеждает те участники, которые получили большее число
+2. Побеждают те участники, которые получили большее число
 3. Стоимость игры 10 баллов
 4. Приз - общий банк поделенный между всеми победителями
 
@@ -59,7 +59,7 @@ def get_game_result_template_str(results: GameResult):
     winners_name = ','.join(map(lambda data: data['player']['name'], filter(lambda data: data['is_winner'], results)))
     return f'''
 Игра окончена
-<b>Побелители</b>: {winners_name}
+<b>Победители</b>: {winners_name}
 
 Таблица игры: 
 {result_table_str}
