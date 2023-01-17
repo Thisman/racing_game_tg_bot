@@ -25,7 +25,10 @@ dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    await message.reply(get_start_template_str(), parse_mode=types.ParseMode.HTML)
+    await message.reply(
+        get_start_template_str(),
+        parse_mode=types.ParseMode.HTML
+    )
 
 @dp.message_handler(commands=['help'])
 async def help(message: types.Message):
@@ -138,7 +141,10 @@ async def spin(message: types.Message):
     try:
         player = get_player(message.from_id)
         results = command_spin_in_game(player, message.chat.id)
-        await message.reply(get_game_result_template_str(results))
+        await message.reply(
+            get_game_result_template_str(results),
+            parse_mode=types.ParseMode.HTML
+        )
     except GameError as error:
         await message.reply(
             get_error_template_str(error),
