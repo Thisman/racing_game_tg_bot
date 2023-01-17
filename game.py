@@ -122,7 +122,7 @@ def command_spin_in_game(player: PlayerData, chat_id: int) -> list[GameResult]:
         player = result['player']
         if (result['is_winner']):
             update_player(player, {
-                'bank': player['bank'] + round((10 * (len(game_results) - 1)) / winners_len)
+                'bank': (player['bank'] - 10) + round((len(game_results) * 10) / winners_len)
             })
         else:
             update_player(player, {

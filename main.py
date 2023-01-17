@@ -160,7 +160,7 @@ async def spin(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
         time.sleep(1)
-        for data in results:
+        for data in reversed(results):
             await game_process_message.edit_text(
                 get_player_spin_str(data),
                 parse_mode=types.ParseMode.HTML
@@ -172,13 +172,13 @@ async def spin(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
-        await game_process_message.reply(
+        await message.reply(
             get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
-        await game_process_message.reply(
+        await message.reply(
             get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
