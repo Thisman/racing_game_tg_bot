@@ -3,7 +3,7 @@ from aiogram import types
 from db import players_collection
 from error import GameError, ERROR_PLAYER_ALREADY_EXIST, ERROR_PLAYER_NOT_EXIST
 
-class Player:
+class PlayerData:
     id: int
     name: str
     bank: int
@@ -19,14 +19,14 @@ def register_player(user: types.User) -> None:
         'bank': 100,
     })
 
-def get_player(id) -> Player:
+def get_player(id) -> PlayerData:
     player = players_collection.find_one({ 'id': id })
     if (player is None):
         raise GameError(ERROR_PLAYER_NOT_EXIST)
     
     return player
 
-def update_player(player: Player, data):
+def update_player(player: PlayerData, data):
     players_collection.update_one({ 'id': player['id'] }, {
         '$set': data,
     })

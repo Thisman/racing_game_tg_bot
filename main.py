@@ -6,11 +6,16 @@ from player import register_player, get_player
 from game import command_create_game, command_end_game, command_join_to_game, \
     command_leave_from_game, command_spin_in_game
 from error import GameError, ERROR_UNEXPECTED, \
-    ERROR_PLAYER_NOT_EXIST
+    ERROR_PLAYER_NOT_EXIST, ERROR_BOT_TOKEN_NOT_EXIST
 from game import get_active_game
+from templates import get_help_template_str, get_info_template_str, \
+    get_start_template_str, get_error_template_str, \
+    get_game_create_tempalte_str, get_game_result_template_str, \
+    get_player_register_template_str, get_player_join_template_str, \
+    get_player_leave_template_str, get_stop_game_template_str
 
 if(len(sys.argv) == 1):
-    print('Не передан токен для авторизации')
+    print(ERROR_BOT_TOKEN_NOT_EXIST)
     exit(1)
 
 API_TOKEN = sys.argv[1]
@@ -20,59 +25,28 @@ dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    await message.reply('''
-Бот для проведения простой игры
-Каждому участнику случайно выбирается число
-Побеждает тот участник, который получил большее число
-
-Автор: @tablescable
-Ссылка на проект: https://github.com/Thisman/spin_game_tg_bot
-    ''')
+    await message.reply(get_start_template_str(), parse_mode=types.ParseMode.HTML)
 
 @dp.message_handler(commands=['help'])
 async def help(message: types.Message):
-    await message.reply('''
-Основные команды
-/info - информация о боте
-
-/register - создать игрока
-/create - создать новую игру
-/join - вступить в активную игру
-/leave - покинуть активную игру
-/spin - запустить игру
-/stop - удалить активную игру
-    ''')
+    await message.reply(get_help_template_str())
 
 @dp.message_handler(commands=['info'])
 async def info(message: types.Message):
     try:
         player = get_player(message.from_id)
         game = get_active_game(message.chat.id)
-        active_game_status = f'Нет активной игры' if game is None else f'Есть активная игра, кол-во игроков {len(game["players"])}'
-        active_game_bank = '' if game is None else f'Банк игры {len(game["players"]) * 10}'
-        await message.reply(f'''
-Текущий банк игрока {player["name"]} - {player["bank"]}
-
-{active_game_status}
-{active_game_bank}
-        ''')
+        await message.reply(get_info_template_str(player, game))
     except GameError as error:
-        if (error == ERROR_PLAYER_NOT_EXIST):
-            active_game_status = f'Нет активной игры' if game is None else f'Есть активная игра, кол-во игроков {len(game["players"])}'
-            active_game_bank = '' if game is None else f'Банк игры {len(game["players"]) * 10}'
-            await message.reply(f'''
-{active_game_status}
-{active_game_bank}
-            ''')
-        else:
-            await message.reply(
-                f'<i>{error}</i>',
-                parse_mode=types.ParseMode.HTML
-            )
+        error_text = get_info_template_str(None, game) if error == ERROR_PLAYER_NOT_EXIST else get_error_template_str(error)
+        await message.reply(
+            get_error_template_str(error_text),
+            parse_mode=types.ParseMode.HTML
+        )
     except Exception as error:
         print(error)
         await message.reply(
-            f'<i>{ERROR_UNEXPECTED}</i>',
+            get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
@@ -83,18 +57,18 @@ async def register(message: types.Message):
         register_player(message.from_user)
         player = get_player(message.from_id)
         await message.reply(
-            f'<i>Зарегистрирован новый игрок {player["name"]}</i>',
+            get_player_register_template_str(player),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
         await message.reply(
-            f'<i>{error}</i>',
+            get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            f'<i>{ERROR_UNEXPECTED}</i>',
+            get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
@@ -103,22 +77,16 @@ async def create(message: types.Message):
     try:
         player = get_player(message.from_id)
         command_create_game(player, message.chat.id)
-        await message.reply('''
-Создана новая игра
-
-Для участия в игре используйте команду /join
-Для начала игры используйте команду /spin
-Для окончания игры используйте команду /stop
-            ''')
+        await message.reply(get_game_create_tempalte_str())
     except GameError as error:
         await message.reply(
-            f'<i>{error}</i>',
+            get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            f'<i>{ERROR_UNEXPECTED}</i>',
+            get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
@@ -129,18 +97,18 @@ async def join(message: types.Message):
         player = get_player(message.from_id)
         command_join_to_game(player, message.chat.id)
         await message.reply(
-            f'<i>Игрок {player["name"]} вошел в игру</i>',
+            get_player_join_template_str(player),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
         await message.reply(
-            f'<i>{error}</i>',
+            get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            f'<i>{ERROR_UNEXPECTED}</i>',
+            get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
@@ -150,47 +118,36 @@ async def leave(message: types.Message):
         player = get_player(message.from_id)
         command_leave_from_game(player, message.chat.id)
         await message.reply(
-            f'<i>Игрок {player["name"]} вышел из игры</i>',
+            get_player_leave_template_str(player),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
         await message.reply(
-            f'<i>{error}</i>',
+            get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            f'<i>{ERROR_UNEXPECTED}</i>',
+            get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
 @dp.message_handler(commands=['spin'])
 async def spin(message: types.Message):
-    await message.reply(
-        '<i>Начинаю игру</i>',
-        parse_mode=types.ParseMode.HTML
-    )
     try:
         player = get_player(message.from_id)
         results = command_spin_in_game(player, message.chat.id)
-        result_table_str = '\n'.join(map(lambda data: f'Игрок: {data["player"]["name"]} - {data["value"]}', results))
-        winners_name = ','.join(map(lambda data: data['player']['name'], filter(lambda data: data['is_winner'], results)))
-        await message.reply(f'''
-Игра окончена
-Побелители: {winners_name}
-Таблица игры: 
-{result_table_str}
-        ''')
+        await message.reply(get_game_result_template_str(results))
     except GameError as error:
         await message.reply(
-            f'<i>{error}</i>',
+            get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            f'<i>{ERROR_UNEXPECTED}</i>',
+            get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
@@ -200,18 +157,18 @@ async def stop(message: types.Message):
         player = get_player(message.from_id)
         command_end_game(player, message.chat.id)
         await message.reply(
-            '<i>Активная игра в чате остановлена</i>',
+            get_stop_game_template_str(),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
         await message.reply(
-            f'<i>{error}</i>',
+            get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            f'<i>{ERROR_UNEXPECTED}</i>',
+            get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 

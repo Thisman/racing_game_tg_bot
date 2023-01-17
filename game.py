@@ -2,17 +2,17 @@ import random
 from datetime import datetime
 
 from db import games_collection
-from player import Player, get_player, update_player
+from player import PlayerData, get_player, update_player
 from error import GameError, ERROR_COMMAND_NOT_IN_CHAT, \
     ERROR_GAME_ALREADY_EXIST, ERROR_GAME_NOT_EXIST, ERROR_PLAYER_ALREADY_IN_GAME, \
-    ERROR_PLAYER_NOT_IN_GAME, ERROR_PLAYER_NOT_ACCESS, ERROR_GAME_NOT_ENOUGH_PLAYERS
+    ERROR_PLAYER_NOT_IN_GAME, ERROR_GAME_NOT_ENOUGH_PLAYERS
 
 class GameResult:
-    player: Player
+    player: PlayerData
     is_winner: bool
     value: int
 
-class Game:
+class GameData:
     chat_id: int
     creator: int
     players: list[int]
@@ -25,7 +25,7 @@ def check_is_command_valid(chat_id: int):
     if (chat_id > 0):
         raise GameError(ERROR_COMMAND_NOT_IN_CHAT)
 
-def create_new_game(creator: Player, chat_id: int):
+def create_new_game(creator: PlayerData, chat_id: int):
     games_collection.insert_one({
         'chat_id': chat_id,
         'creator': creator['id'],
@@ -40,10 +40,10 @@ def update_game(game_id: int, data):
         '$set': data,
     })
 
-def get_active_game(chat_id: int) -> Game | None:
+def get_active_game(chat_id: int) -> GameData | None:
     return games_collection.find_one({ 'chat_id': chat_id, 'status': 'active' })
 
-def get_game_result(game: Game) -> list[GameResult]:
+def get_game_result(game: GameData) -> list[GameResult]:
     results: list[GameResult] = []
     for id in game['players']:
         player = get_player(id)
@@ -58,7 +58,7 @@ def get_game_result(game: Game) -> list[GameResult]:
     return results
 
 
-def command_create_game(player: Player, chat_id: int):
+def command_create_game(player: PlayerData, chat_id: int):
     check_is_command_valid(chat_id)
 
     game = get_active_game(chat_id)
@@ -67,7 +67,7 @@ def command_create_game(player: Player, chat_id: int):
     
     create_new_game(player, chat_id)
 
-def command_join_to_game(player: Player, chat_id: int):
+def command_join_to_game(player: PlayerData, chat_id: int):
     check_is_command_valid(chat_id)
 
     game = get_active_game(chat_id)
@@ -82,7 +82,7 @@ def command_join_to_game(player: Player, chat_id: int):
     })
 
 
-def command_leave_from_game(player: Player, chat_id: int):
+def command_leave_from_game(player: PlayerData, chat_id: int):
     check_is_command_valid(chat_id)
 
     game = get_active_game(chat_id)
@@ -96,7 +96,7 @@ def command_leave_from_game(player: Player, chat_id: int):
         'players': list(filter(lambda id: id != player['id'], game['players']))
     })
 
-def command_spin_in_game(player: Player, chat_id: int) -> list[GameResult]:
+def command_spin_in_game(player: PlayerData, chat_id: int) -> list[GameResult]:
     check_is_command_valid(chat_id)
 
     game = get_active_game(chat_id)
@@ -133,15 +133,12 @@ def command_spin_in_game(player: Player, chat_id: int) -> list[GameResult]:
 
     return game_results
 
-def command_end_game(player: Player, chat_id: int):
+def command_end_game(player: PlayerData, chat_id: int):
     check_is_command_valid(chat_id)
 
     game = get_active_game(chat_id)
     if (game is None):
         raise GameError(ERROR_GAME_NOT_EXIST)
-
-    if (game['creator'] != player['id']):
-        raise GameError(ERROR_PLAYER_NOT_ACCESS)
 
     update_game(game['_id'], {
         'status': 'finished'
