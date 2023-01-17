@@ -43,6 +43,9 @@ def update_game(game_id: int, data):
 def get_active_game(chat_id: int) -> GameData | None:
     return games_collection.find_one({ 'chat_id': chat_id, 'status': 'active' })
 
+def get_process_game(chat_id: int) -> GameData | None:
+    return games_collection.find_one({ 'chat_id': chat_id, 'status': 'process' })
+
 def get_game_result(game: GameData) -> list[GameResult]:
     results: list[GameResult] = []
     for id in game['players']:

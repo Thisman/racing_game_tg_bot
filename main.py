@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher, executor, types
 
 from player import register_player, get_player
 from game import command_create_game, command_end_game, command_join_to_game, \
-    command_leave_from_game, command_spin_in_game
+    command_leave_from_game, command_spin_in_game, get_process_game
 from error import GameError, ERROR_UNEXPECTED, \
     ERROR_PLAYER_NOT_EXIST, ERROR_BOT_TOKEN_NOT_EXIST
 from game import get_active_game
@@ -80,6 +80,9 @@ async def register(message: types.Message):
 @dp.message_handler(commands=['create'])
 async def create(message: types.Message):
     try:
+        if(get_process_game(message.chat.id) is not None):
+            return
+
         player = get_player(message.from_id)
         command_create_game(player, message.chat.id)
         await message.reply(get_game_create_tempalte_str())
@@ -99,6 +102,9 @@ async def create(message: types.Message):
 @dp.message_handler(commands=['join'])
 async def join(message: types.Message):
     try:
+        if(get_process_game(message.chat.id) is not None):
+            return
+
         player = get_player(message.from_id)
         command_join_to_game(player, message.chat.id)
         await message.reply(
@@ -120,6 +126,9 @@ async def join(message: types.Message):
 @dp.message_handler(commands=['leave'])
 async def leave(message: types.Message):
     try:
+        if(get_process_game(message.chat.id) is not None):
+            return
+
         player = get_player(message.from_id)
         command_leave_from_game(player, message.chat.id)
         await message.reply(
@@ -141,6 +150,9 @@ async def leave(message: types.Message):
 @dp.message_handler(commands=['spin'])
 async def spin(message: types.Message):
     try:
+        if(get_process_game(message.chat.id) is not None):
+            return
+
         player = get_player(message.from_id)
         results = command_spin_in_game(player, message.chat.id)
         game_process_message = await message.reply(
@@ -174,6 +186,9 @@ async def spin(message: types.Message):
 @dp.message_handler(commands=['stop'])
 async def stop(message: types.Message):
     try:
+        if(get_process_game(message.chat.id) is not None):
+            return
+
         player = get_player(message.from_id)
         command_end_game(player, message.chat.id)
         await message.reply(
