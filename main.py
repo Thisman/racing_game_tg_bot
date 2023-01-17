@@ -1,5 +1,6 @@
 import sys
 import time
+import random
 
 from aiogram import Bot, Dispatcher, executor, types
 
@@ -160,7 +161,7 @@ async def spin(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
         time.sleep(1)
-        for data in reversed(results):
+        for data in random.sample(results, k=len(results)):
             await game_process_message.edit_text(
                 get_player_spin_str(data),
                 parse_mode=types.ParseMode.HTML
