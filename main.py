@@ -1,4 +1,5 @@
 import sys
+import time
 
 from aiogram import Bot, Dispatcher, executor, types
 
@@ -12,7 +13,8 @@ from templates import get_help_template_str, get_info_template_str, \
     get_start_template_str, get_error_template_str, \
     get_game_create_tempalte_str, get_game_result_template_str, \
     get_player_register_template_str, get_player_join_template_str, \
-    get_player_leave_template_str, get_stop_game_template_str
+    get_player_leave_template_str, get_stop_game_template_str, \
+    get_player_spin_str, get_start_game_template_str
 
 if(len(sys.argv) == 1):
     print(ERROR_BOT_TOKEN_NOT_EXIST)
@@ -141,18 +143,30 @@ async def spin(message: types.Message):
     try:
         player = get_player(message.from_id)
         results = command_spin_in_game(player, message.chat.id)
-        await message.reply(
+        game_process_message = await message.reply(
+            get_start_game_template_str(),
+            parse_mode=types.ParseMode.HTML
+        )
+        time.sleep(1)
+        for data in results:
+            await game_process_message.edit_text(
+                get_player_spin_str(data),
+                parse_mode=types.ParseMode.HTML
+            )
+            time.sleep(1)
+
+        await game_process_message.edit_text(
             get_game_result_template_str(results),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
-        await message.reply(
+        await game_process_message.reply(
             get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
-        await message.reply(
+        await game_process_message.reply(
             get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )

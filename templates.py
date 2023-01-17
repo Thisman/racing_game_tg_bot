@@ -55,7 +55,7 @@ def get_game_create_tempalte_str():
     '''
 
 def get_game_result_template_str(results: GameResult):
-    result_table_str = '\n'.join(map(lambda data: f'Игрок: {data["player"]["name"]} - {data["value"]}', results))
+    result_table_str = '\n'.join(map(get_player_spin_str, results))
     winners_name = ','.join(map(lambda data: data['player']['name'], filter(lambda data: data['is_winner'], results)))
     return f'''
 Игра окончена
@@ -79,3 +79,9 @@ def get_player_leave_template_str(player: PlayerData):
 
 def get_stop_game_template_str():
     return '<i>Активная игра в чате остановлена!</i>'
+
+def get_start_game_template_str():
+    return '<i>Игра начинается!</i>'
+
+def get_player_spin_str(data: GameResult):
+    return f'Игрок: {data["player"]["name"]} выкинул {data["value"]}'
