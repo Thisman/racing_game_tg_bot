@@ -6,7 +6,7 @@ from db import games_collection
 from player import PlayerData, get_player, update_player
 from error import GameError, ERROR_COMMAND_NOT_IN_CHAT, \
     ERROR_GAME_ALREADY_EXIST, ERROR_GAME_NOT_EXIST, ERROR_PLAYER_ALREADY_IN_GAME, \
-    ERROR_PLAYER_NOT_IN_GAME
+    ERROR_PLAYER_NOT_IN_GAME, ERROR_GAME_NOT_ENOUGH_PLAYERS
 
 class GameResult:
     player: PlayerData
