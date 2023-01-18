@@ -1,11 +1,12 @@
 import random
 from datetime import datetime
+from enum import Enum
 
 from db import games_collection
 from player import PlayerData, get_player, update_player
 from error import GameError, ERROR_COMMAND_NOT_IN_CHAT, \
     ERROR_GAME_ALREADY_EXIST, ERROR_GAME_NOT_EXIST, ERROR_PLAYER_ALREADY_IN_GAME, \
-    ERROR_PLAYER_NOT_IN_GAME, ERROR_GAME_NOT_ENOUGH_PLAYERS
+    ERROR_PLAYER_NOT_IN_GAME
 
 class GameResult:
     player: PlayerData
@@ -20,6 +21,15 @@ class GameData:
     result: list[GameResult]
     time_create: datetime
 
+GAME_ACTIVE_STATUS = 'active'
+GAME_PROCESS_STATUS = 'process'
+GAME_FINISHED_STATUS = 'finished'
+
+GAME_SPIN_START_STATUS = 'spin_start'
+GAME_SPIN_PROCESS_STATUS = 'spin_status'
+GAME_SPIN_FINISHED_STATUS = 'spin_finished'
+
+# TODO: сделать enum для состояний игры
 
 def check_is_command_valid(chat_id: int):
     if (chat_id > 0):
@@ -31,7 +41,7 @@ def create_new_game(creator: PlayerData, chat_id: int):
         'creator': creator['id'],
         'time_create': datetime.now(),
         'players': [creator['id']],
-        'status': 'active',
+        'status': GAME_ACTIVE_STATUS,
         'result': '',
     })
 
@@ -41,10 +51,10 @@ def update_game(game_id: int, data):
     })
 
 def get_active_game(chat_id: int) -> GameData | None:
-    return games_collection.find_one({ 'chat_id': chat_id, 'status': 'active' })
+    return games_collection.find_one({ 'chat_id': chat_id, 'status': GAME_ACTIVE_STATUS })
 
 def get_process_game(chat_id: int) -> GameData | None:
-    return games_collection.find_one({ 'chat_id': chat_id, 'status': 'process' })
+    return games_collection.find_one({ 'chat_id': chat_id, 'status': GAME_PROCESS_STATUS })
 
 def get_game_result(game: GameData) -> list[GameResult]:
     results: list[GameResult] = []
@@ -113,7 +123,7 @@ def command_spin_in_game(player: PlayerData, chat_id: int) -> list[GameResult]:
         raise GameError(ERROR_GAME_NOT_ENOUGH_PLAYERS)
 
     update_game(game['_id'], {
-        'status': 'process'
+        'status': GAME_SPIN_PROCESS_STATUS
     })
 
     game_results = get_game_result(game)
@@ -130,13 +140,13 @@ def command_spin_in_game(player: PlayerData, chat_id: int) -> list[GameResult]:
             })
 
     update_game(game['_id'], {
-        'status': 'finished',
+        'status': GAME_FINISHED_STATUS,
         'result': game_results,
     })
 
     return game_results
 
-def command_end_game(player: PlayerData, chat_id: int):
+def command_end_game(chat_id: int):
     check_is_command_valid(chat_id)
 
     game = get_active_game(chat_id)
@@ -144,5 +154,5 @@ def command_end_game(player: PlayerData, chat_id: int):
         raise GameError(ERROR_GAME_NOT_EXIST)
 
     update_game(game['_id'], {
-        'status': 'finished'
+        'status': GAME_FINISHED_STATUS
     })

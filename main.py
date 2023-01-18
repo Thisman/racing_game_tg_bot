@@ -6,16 +6,13 @@ from aiogram import Bot, Dispatcher, executor, types
 
 from player import register_player, get_player
 from game import command_create_game, command_end_game, command_join_to_game, \
-    command_leave_from_game, command_spin_in_game, get_process_game
+    command_leave_from_game, command_spin_in_game, get_process_game, \
+    GAME_SPIN_FINISHED_STATUS, GAME_SPIN_START_STATUS, \
+    GAME_SPIN_PROCESS_STATUS
 from error import GameError, ERROR_UNEXPECTED, \
-    ERROR_PLAYER_NOT_EXIST, ERROR_BOT_TOKEN_NOT_EXIST
+    ERROR_BOT_TOKEN_NOT_EXIST
 from game import get_active_game
-from templates import get_help_template_str, get_info_template_str, \
-    get_start_template_str, get_error_template_str, \
-    get_game_create_tempalte_str, get_game_result_template_str, \
-    get_player_register_template_str, get_player_join_template_str, \
-    get_player_leave_template_str, get_stop_game_template_str, \
-    get_player_spin_str, get_start_game_template_str
+import templates as tpl
 
 if(len(sys.argv) == 1):
     print(ERROR_BOT_TOKEN_NOT_EXIST)
@@ -29,30 +26,51 @@ dp = Dispatcher(bot)
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     await message.reply(
-        get_start_template_str(),
+        tpl.get_start_template_str(),
         parse_mode=types.ParseMode.HTML
     )
 
 @dp.message_handler(commands=['help'])
 async def help(message: types.Message):
-    await message.reply(get_help_template_str())
+    await message.reply(
+        tpl.get_help_template_str(),
+        parse_mode=types.ParseMode.HTML
+    )
 
 @dp.message_handler(commands=['info'])
 async def info(message: types.Message):
     try:
         player = get_player(message.from_id)
         game = get_active_game(message.chat.id)
-        await message.reply(get_info_template_str(player, game))
+        await message.reply(tpl.get_info_template_str(player, game))
     except GameError as error:
-        error_text = get_info_template_str(None, game) if error == ERROR_PLAYER_NOT_EXIST else get_error_template_str(error)
         await message.reply(
-            get_error_template_str(error_text),
+            tpl.get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            get_error_template_str(ERROR_UNEXPECTED),
+            tpl.get_error_template_str(ERROR_UNEXPECTED),
+            parse_mode=types.ParseMode.HTML
+        )
+
+@dp.message_handler(commands=['rules'])
+async def rules(message: types.Message):
+    try:
+        await message.reply(
+            tpl.get_rule_tempalte_str(),
+            parse_mode=types.ParseMode.HTML
+        )
+    except GameError as error:
+        await message.reply(
+            tpl.get_error_template_str(error),
+            parse_mode=types.ParseMode.HTML
+        )
+    except Exception as error:
+        print(error)
+        await message.reply(
+            tpl.get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
@@ -63,20 +81,21 @@ async def register(message: types.Message):
         register_player(message.from_user)
         player = get_player(message.from_id)
         await message.reply(
-            get_player_register_template_str(player),
+            tpl.get_player_register_template_str(player),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
         await message.reply(
-            get_error_template_str(error),
+            tpl.get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            get_error_template_str(ERROR_UNEXPECTED),
+            tpl.get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
+
 
 @dp.message_handler(commands=['create'])
 async def create(message: types.Message):
@@ -86,19 +105,18 @@ async def create(message: types.Message):
 
         player = get_player(message.from_id)
         command_create_game(player, message.chat.id)
-        await message.reply(get_game_create_tempalte_str())
+        await message.reply(tpl.get_game_create_tempalte_str())
     except GameError as error:
         await message.reply(
-            get_error_template_str(error),
+            tpl.get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            get_error_template_str(ERROR_UNEXPECTED),
+            tpl.get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
-
 
 @dp.message_handler(commands=['join'])
 async def join(message: types.Message):
@@ -109,18 +127,18 @@ async def join(message: types.Message):
         player = get_player(message.from_id)
         command_join_to_game(player, message.chat.id)
         await message.reply(
-            get_player_join_template_str(player),
+            tpl.get_player_join_template_str(player),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
         await message.reply(
-            get_error_template_str(error),
+            tpl.get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            get_error_template_str(ERROR_UNEXPECTED),
+            tpl.get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
@@ -133,18 +151,18 @@ async def leave(message: types.Message):
         player = get_player(message.from_id)
         command_leave_from_game(player, message.chat.id)
         await message.reply(
-            get_player_leave_template_str(player),
+            tpl.get_player_leave_template_str(player),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
         await message.reply(
-            get_error_template_str(error),
+            tpl.get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            get_error_template_str(ERROR_UNEXPECTED),
+            tpl.get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
@@ -156,31 +174,34 @@ async def spin(message: types.Message):
 
         player = get_player(message.from_id)
         results = command_spin_in_game(player, message.chat.id)
+        randomize_ordered_results = random.sample(results, k=len(results))
+
         game_process_message = await message.reply(
-            get_start_game_template_str(),
+            tpl.get_game_results_template_str(results, [], GAME_SPIN_START_STATUS),
             parse_mode=types.ParseMode.HTML
         )
         time.sleep(1)
-        for data in random.sample(results, k=len(results)):
+        for index, _ in enumerate(results):
+            print(index)
             await game_process_message.edit_text(
-                get_player_spin_str(data),
+                tpl.get_game_results_template_str(results, randomize_ordered_results[0: index], GAME_SPIN_PROCESS_STATUS),
                 parse_mode=types.ParseMode.HTML
             )
             time.sleep(1)
 
         await game_process_message.edit_text(
-            get_game_result_template_str(results),
+            tpl.get_game_results_template_str(results, randomize_ordered_results, GAME_SPIN_FINISHED_STATUS),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
         await message.reply(
-            get_error_template_str(error),
+            tpl.get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            get_error_template_str(ERROR_UNEXPECTED),
+            tpl.get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
@@ -190,21 +211,20 @@ async def stop(message: types.Message):
         if(get_process_game(message.chat.id) is not None):
             return
 
-        player = get_player(message.from_id)
-        command_end_game(player, message.chat.id)
+        command_end_game(message.chat.id)
         await message.reply(
-            get_stop_game_template_str(),
+            tpl.get_stop_game_template_str(),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
         await message.reply(
-            get_error_template_str(error),
+            tpl.get_error_template_str(error),
             parse_mode=types.ParseMode.HTML
         )
     except Exception as error:
         print(error)
         await message.reply(
-            get_error_template_str(ERROR_UNEXPECTED),
+            tpl.get_error_template_str(ERROR_UNEXPECTED),
             parse_mode=types.ParseMode.HTML
         )
 
