@@ -15,7 +15,7 @@ from modules.error import GameError, ERROR_UNEXPECTED, \
     ERROR_REGISTER_PLAYER, ERROR_PLAYER_NOT_EXIST, \
     ERROR_GAME_ALREADY_EXIST, ERROR_GAME_NOT_EXIST, \
     ERROR_PLAYER_ALREADY_IN_GAME, ERROR_PLAYER_NOT_IN_GAME, \
-    ERROR_REGISTER_GAME
+    ERROR_REGISTER_GAME, ERROR_NOT_ENOUGH_PLAYER_BANK
 
 from renderers.bot_renderer import BotRenderer
 from renderers.player_renderer import PlayerRenderer
@@ -163,6 +163,9 @@ async def join_game(message: types.Message):
         player = Player.load(message.from_user)
         if (player is None):
             raise GameError(ERROR_PLAYER_NOT_EXIST)
+        
+        if (player.is_enough_bank() is False):
+            raise GameError(ERROR_NOT_ENOUGH_PLAYER_BANK)
 
         game = Game.load(message.chat.id)
         if (game is None or game.is_ready() is False):

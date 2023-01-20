@@ -52,3 +52,6 @@ class Player:
 
     def set_bank(self, bank: int) -> str:
         self.data['bank'] = bank
+
+    def is_enough_bank(self) -> bool:
+        return self.data['bank'] > 0
