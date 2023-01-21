@@ -1,3 +1,5 @@
+from aiogram import types
+
 from modules.commands import REGISTER_PLAYER_COMMAND, \
     REGISTER_GAME_COMMAND, JOIN_GAME_COMMAND, \
     LEAVE_GAME_COMMAND, STOP_GAME_COMMAND

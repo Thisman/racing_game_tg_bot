@@ -1,5 +1,8 @@
 from aiogram import types
+
 from modules.db import players_collection
+from modules.error import GameError, ERROR_PLAYER_ALREADY_EXIST, \
+    ERROR_REGISTER_PLAYER
 
 class PlayerData:
     name: str
@@ -9,6 +12,10 @@ class PlayerData:
 class Player:
     @staticmethod
     def register(user: types.User):
+        existing_player = Player.load(user.id)
+        if (existing_player is not None):
+            raise GameError(ERROR_PLAYER_ALREADY_EXIST)
+
         players_collection.insert_one({
             'id': user.id,
             'name': user.full_name,
@@ -20,7 +27,7 @@ class Player:
         if (player is not None):
             return player
         else:
-            return None
+            raise GameError(ERROR_REGISTER_PLAYER)
 
     @staticmethod
     def load(user_id: int):

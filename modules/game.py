@@ -3,6 +3,8 @@ from datetime import datetime
 
 from modules.player import Player
 from modules.db import games_collection
+from modules.error import GameError, ERROR_GAME_ALREADY_EXIST, \
+    ERROR_REGISTER_GAME
 
 GAME_READY_STATUS = 'ready'
 GAME_STARTED_STATUS = 'started'
@@ -27,6 +29,10 @@ class GameHorse:
 class Game:
     @staticmethod
     def register(chat_id: int):
+        exisiting_game = Game.load(chat_id)
+        if (exisiting_game is not None and exisiting_game.is_finished() is False):
+            raise GameError(ERROR_GAME_ALREADY_EXIST)
+
         games_collection.insert_one({
             'chat_id': chat_id,
             'time_create': datetime.now(),
@@ -39,7 +45,7 @@ class Game:
         if (game is not None):
             return game
         else:
-            return None
+            raise GameError(ERROR_REGISTER_GAME)
 
     @staticmethod
     def load(chat_id: int):
@@ -49,6 +55,13 @@ class Game:
         else:
             return Game(games[0])
 
+    @staticmethod
+    def get_stared_game(chat_id: int):
+        game = Game.load(chat_id)
+        if (game is None or game.is_started() is False):
+            return None
+        else:
+            return game
 
     def __init__(self, data: GameData):
         self.data = data

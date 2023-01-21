@@ -46,7 +46,7 @@ class GameRenderer:
 
     @staticmethod
     def render_player_join_success_tpl(player: Player, horse_id: int):
-        return f'<i>Игрок {player.get_name()} поставил на участника номер {horse_id}!</i>'
+        return f'<i>Игрок {player.get_name()} поставил на участника {GameRenderer.render_horse_icon(horse_id)}!</i>'
 
     @staticmethod
     def render_player_leave_success__plt(player: Player):
@@ -67,6 +67,7 @@ class GameRenderer:
 {GameRenderer.render_horse_tpl(round[2])}
 {GameRenderer.render_horse_tpl(round[3])}
 {GameRenderer.render_horse_tpl(round[4])}
+·············································{emoji.emojize(':crown:', language='alias')}
         '''
 
     @staticmethod
@@ -80,6 +81,7 @@ class GameRenderer:
 {GameRenderer.render_horse_tpl(round[2])}
 {GameRenderer.render_horse_tpl(round[3])}
 {GameRenderer.render_horse_tpl(round[4])}
+·············································{emoji.emojize(':crown:', language='alias')}
         '''
 
     @staticmethod
@@ -93,7 +95,7 @@ class GameRenderer:
 {GameRenderer.render_horse_tpl(round[2])}
 {GameRenderer.render_horse_tpl(round[3])}
 {GameRenderer.render_horse_tpl(round[4])}
-{GameRenderer.render_winners(winners)}
+·············································{emoji.emojize(':crown:', language='alias')}
         '''
 
     @staticmethod
@@ -109,10 +111,3 @@ class GameRenderer:
         max_ditance = sorted(round, key=lambda horse: horse['distance'], reverse=True)[0]['distance']
         leaders = list(filter(lambda horse: horse['distance'] == max_ditance, round))
         return ' '.join(map(lambda horse: GameRenderer.render_horse_icon(horse['id']), leaders))
-
-    @staticmethod
-    def render_winners(winners: list[Player]):
-        winner_names = map(lambda winner: winner.get_name(), winners)
-        return f'''
-Приз получают: {', '.join(winner_names)}
-        '''
