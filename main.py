@@ -1,9 +1,11 @@
 import sys
+import time
 
 from aiogram import Bot, Dispatcher, executor, types
 
+from modules.game_bot import GameBot
 from modules.player import Player
-from modules.game import Game, check_is_chat_dialog, \
+from modules.game import Game, \
     check_started_game_in_chat
 from modules.commands import START_COMMAND, RULES_COMMAND, \
     HELP_COMMAND, INFO_COMMAND, REGISTER_PLAYER_COMMAND, \
@@ -15,7 +17,8 @@ from modules.error import GameError, ERROR_UNEXPECTED, \
     ERROR_REGISTER_PLAYER, ERROR_PLAYER_NOT_EXIST, \
     ERROR_GAME_ALREADY_EXIST, ERROR_GAME_NOT_EXIST, \
     ERROR_PLAYER_ALREADY_IN_GAME, ERROR_PLAYER_NOT_IN_GAME, \
-    ERROR_REGISTER_GAME, ERROR_NOT_ENOUGH_PLAYER_BANK
+    ERROR_REGISTER_GAME, ERROR_NOT_ENOUGH_PLAYER_BANK, \
+    ERROR_GAME_NOT_ENOUGH_PLAYERS
 
 from renderers.bot_renderer import BotRenderer
 from renderers.player_renderer import PlayerRenderer
@@ -46,7 +49,7 @@ async def help(message: types.Message):
 
 @dp.message_handler(commands=[INFO_COMMAND])
 async def info(message: types.Message):
-    player = Player.load(message.from_user)
+    player = Player.load(message.from_id)
     game = Game.load(message.chat.id)
 
     await message.reply(
@@ -90,7 +93,7 @@ async def rules(message: types.Message):
 @dp.message_handler(commands=[REGISTER_PLAYER_COMMAND])
 async def register_player(message: types.Message):
     try:
-        existing_player = Player.load(message.from_user)
+        existing_player = Player.load(message.from_id)
         if (existing_player is not None):
             raise GameError(ERROR_PLAYER_ALREADY_EXIST)
 
@@ -118,13 +121,13 @@ async def register_player(message: types.Message):
 @dp.message_handler(commands=[REGISTER_GAME_COMMAND])
 async def register_game(message: types.Message):
     try:
-        if(check_started_game_in_chat(message.chat.id) is True):
-            return
-        
-        if(check_is_chat_dialog(message.chat.id)):
+        if(GameBot.check_is_chat_dialog(message.chat.id)):
             return
 
-        player = Player.load(message.from_user)
+        if(check_started_game_in_chat(message.chat.id) is True):
+            return
+
+        player = Player.load(message.from_id)
         if (player is None):
             raise GameError(ERROR_PLAYER_NOT_EXIST)
 
@@ -132,9 +135,10 @@ async def register_game(message: types.Message):
         if (exisiting_game is not None and exisiting_game.is_finished() is False):
             raise GameError(ERROR_GAME_ALREADY_EXIST)
 
-        new_game = Game.register(player, message.chat.id)
+        new_game = Game.register(message.chat.id)
         if (new_game is None):
             raise GameError(ERROR_REGISTER_GAME)
+
         await message.reply(
             GameRenderer.render_register_success_tpl(),
             parse_mode=types.ParseMode.HTML
@@ -151,16 +155,22 @@ async def register_game(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
 
-@dp.message_handler(commands=[JOIN_GAME_COMMAND])
+@dp.message_handler(commands=[
+    JOIN_GAME_COMMAND + '_0',
+    JOIN_GAME_COMMAND + '_1',
+    JOIN_GAME_COMMAND + '_2',
+    JOIN_GAME_COMMAND + '_3',
+    JOIN_GAME_COMMAND + '_4',
+])
 async def join_game(message: types.Message):
     try:
+        if(GameBot.check_is_chat_dialog(message.chat.id)):
+            return
+
         if(check_started_game_in_chat(message.chat.id) is True):
             return
 
-        if(check_is_chat_dialog(message.chat.id)):
-            return
-
-        player = Player.load(message.from_user)
+        player = Player.load(message.from_id)
         if (player is None):
             raise GameError(ERROR_PLAYER_NOT_EXIST)
         
@@ -174,11 +184,18 @@ async def join_game(message: types.Message):
         if (game.is_player_in_game(player) is True):
             raise GameError(ERROR_PLAYER_ALREADY_IN_GAME)
 
-        game.join(player)
+        command = message.text
+        if ('@' in message.text):
+            command = message.text.split('@')[0]
+
+        command = command.split('_')
+        horse_id = int(command[2])
+
+        game.join(player, horse_id)
         game.save()
 
         await message.reply(
-            GameRenderer.render_player_join_success_tpl(player),
+            GameRenderer.render_player_join_success_tpl(player, horse_id),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
@@ -196,13 +213,13 @@ async def join_game(message: types.Message):
 @dp.message_handler(commands=[LEAVE_GAME_COMMAND])
 async def leave_game(message: types.Message):
     try:
+        if(GameBot.check_is_chat_dialog(message.chat.id)):
+            return
+
         if(check_started_game_in_chat(message.chat.id) is True):
             return
 
-        if(check_is_chat_dialog(message.chat.id)):
-            return
-
-        player = Player.load(message.from_user)
+        player = Player.load(message.from_id)
         if (player is None):
             raise GameError(ERROR_PLAYER_NOT_EXIST)
 
@@ -235,23 +252,54 @@ async def leave_game(message: types.Message):
 @dp.message_handler(commands=[START_GAME_COMMAND])
 async def start_game(message: types.Message):
     try:
-        if(check_started_game_in_chat(message.chat.id) is True):
+        if(GameBot.check_is_chat_dialog(message.chat.id)):
             return
 
-        if(check_is_chat_dialog(message.chat.id)):
+        if(check_started_game_in_chat(message.chat.id) is True):
             return
 
         game = Game.load(message.chat.id)
         if (game is None or game.is_ready() is False):
             raise GameError(ERROR_GAME_NOT_EXIST)
 
-        game.stop()
+        if (len(game.get_participators()) == 0):
+            raise GameError(ERROR_GAME_NOT_ENOUGH_PLAYERS)
+
+        rounds = game.start()
         game.save()
 
-        await message.reply(
-            GameRenderer.render_stop_tpl(),
-            parse_mode=types.ParseMode.HTML
+        game_message = await message.reply(
+            GameRenderer.render_game_start_tpl(game.get_horses()),
+            parse_mode=types.ParseMode.HTML,
         )
+
+        for round in rounds():
+            time.sleep(1.5)
+            await game_message.edit_text(
+                GameRenderer.render_game_round_tpl(round),
+                parse_mode=types.ParseMode.HTML,
+            )
+        
+        game.stop()
+        game.save()
+        winner_horses_ids = map(lambda data: data['id'], game.get_winner_horses())
+        winner_players = []
+        for [participator, bet] in game.get_participators():
+            player = Player.load(participator)
+            if (player is None):
+                pass
+
+            if (bet in winner_horses_ids):
+                player.set_bank(player.get_bank() + 10)
+                winner_players += [player]
+            else:
+                player.set_bank(player.get_bank() - 10)
+            player.save()
+        await game_message.edit_text(
+            GameRenderer.render_game_end_tpl(game.get_horses(), winner_players),
+            parse_mode=types.ParseMode.HTML,
+        )
+        pass
     except GameError as error:
         await message.reply(
             BotRenderer.render_error_tpl(error),
@@ -267,10 +315,10 @@ async def start_game(message: types.Message):
 @dp.message_handler(commands=[STOP_GAME_COMMAND])
 async def stop_game(message: types.Message):
     try:
-        if(check_started_game_in_chat(message.chat.id) is True):
+        if(GameBot.check_is_chat_dialog(message.chat.id)):
             return
 
-        if(check_is_chat_dialog(message.chat.id)):
+        if(check_started_game_in_chat(message.chat.id) is True):
             return
 
         game = Game.load(message.chat.id)

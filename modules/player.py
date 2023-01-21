@@ -15,7 +15,7 @@ class Player:
             'bank': 100,
         })
 
-        player = Player.load(user)
+        player = Player.load(user.id)
 
         if (player is not None):
             return player
@@ -23,8 +23,8 @@ class Player:
             return None
 
     @staticmethod
-    def load(user: types.User):
-        data = players_collection.find_one({ 'id': user.id })
+    def load(user_id: int):
+        data = players_collection.find_one({ 'id': user_id })
         if (data is None):
             return None
         else:

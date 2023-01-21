@@ -2,9 +2,7 @@ from modules.player import Player
 from modules.game import Game
 from modules.commands import RULES_COMMAND, \
     HELP_COMMAND, INFO_COMMAND, REGISTER_PLAYER_COMMAND, \
-    REGISTER_GAME_COMMAND, JOIN_GAME_COMMAND, \
-    LEAVE_GAME_COMMAND, START_GAME_COMMAND, \
-    STOP_GAME_COMMAND
+    REGISTER_GAME_COMMAND
 
 from renderers.game_renderer import GameRenderer
 from renderers.player_renderer import PlayerRenderer
@@ -26,10 +24,10 @@ class BotRenderer:
     def render_rules_tpl():
         return f'''
 <b>Правила</b>:
-1. Каждому участнику случайно выбирается число
-2. Побеждают те участники, которые получили большее число
-3. Стоимость игры 10 баллов
-4. Приз - общий банк поделенный между всеми победителями
+1. Каждый игрок ставит на определенного участника. Всего их 5
+2. Участники стартуют и побеждают те, кто первым пришел до финиша
+3. Победителей может быть несколько
+4. Игроки, поставившие на победителей, получают приз
 
 Доступные команды /{HELP_COMMAND}
         '''
@@ -43,12 +41,7 @@ class BotRenderer:
 /{INFO_COMMAND} - Информация о банке игрока и статусе игры
 
 /{REGISTER_PLAYER_COMMAND} - Зарегистрировать игрока
-
 /{REGISTER_GAME_COMMAND} - Создать новую игру
-/{JOIN_GAME_COMMAND} - Вступить в игру
-/{LEAVE_GAME_COMMAND} - Покинуть игру
-/{START_GAME_COMMAND} - Запустить игру
-/{STOP_GAME_COMMAND} - Остановить и удалить игру
         '''
 
     @staticmethod
