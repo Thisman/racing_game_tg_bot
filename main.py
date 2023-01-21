@@ -11,10 +11,7 @@ from modules.commands import START_COMMAND, RULES_COMMAND, \
     LEAVE_GAME_COMMAND, START_GAME_COMMAND, \
     STOP_GAME_COMMAND
 from modules.error import GameError, ERROR_UNEXPECTED, \
-    ERROR_BOT_TOKEN_NOT_EXIST, ERROR_PLAYER_NOT_EXIST, \
-    ERROR_GAME_NOT_EXIST, ERROR_PLAYER_ALREADY_IN_GAME, \
-    ERROR_PLAYER_NOT_IN_GAME, ERROR_NOT_ENOUGH_PLAYER_BANK, \
-    ERROR_GAME_NOT_ENOUGH_PLAYERS
+    ERROR_BOT_TOKEN_NOT_EXIST
 
 from renderers.bot_renderer import BotRenderer
 from renderers.player_renderer import PlayerRenderer
@@ -57,27 +54,21 @@ async def help(message: types.Message):
         parse_mode=types.ParseMode.HTML
     )
 
-@dp.message_handler(commands=[INFO_COMMAND])
-async def info(message: types.Message):
-    player = Player.load(message.from_id)
-    game = Game.load(message.chat.id)
-
-    await message.reply(
-        BotRenderer.render_info_tpl(player, game),
-        parse_mode=types.ParseMode.HTML
-    )
-    try:
-        pass
-    except GameError as error:
-        await handler_game_error(message, error)
-    except Exception as error:
-        await handler_error(message, error)
-
 @dp.message_handler(commands=[RULES_COMMAND])
 async def rules(message: types.Message):
+    await message.reply(
+        BotRenderer.render_rules_tpl(),
+        parse_mode=types.ParseMode.HTML
+    )
+
+@dp.message_handler(commands=[INFO_COMMAND])
+async def info(message: types.Message):
     try:
+        player = Player.load(message.from_id)
+        game = Game.load_last(message.chat.id)
+
         await message.reply(
-            BotRenderer.render_rules_tpl(),
+            BotRenderer.render_info_tpl(player, game),
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
@@ -130,19 +121,8 @@ async def join_game(message: types.Message):
         if(Game.get_stared_game(message.chat.id) is not None):
             return
 
-        player = Player.load(message.from_id)
-        if (player is None):
-            raise GameError(ERROR_PLAYER_NOT_EXIST)
-        
-        if (player.is_enough_bank() is False):
-            raise GameError(ERROR_NOT_ENOUGH_PLAYER_BANK)
-
-        game = Game.load(message.chat.id)
-        if (game is None or game.is_ready() is False):
-            raise GameError(ERROR_GAME_NOT_EXIST)
-
-        if (game.is_player_in_game(player) is True):
-            raise GameError(ERROR_PLAYER_ALREADY_IN_GAME)
+        player = Player.load_or_error(message.from_id)
+        game = Game.load_last_or_error(message.chat.id)
 
         command = message.text
         if ('@' in message.text):
@@ -169,17 +149,8 @@ async def leave_game(message: types.Message):
         if(Game.get_stared_game(message.chat.id) is not None):
             return
 
-        player = Player.load(message.from_id)
-        if (player is None):
-            raise GameError(ERROR_PLAYER_NOT_EXIST)
-
-        game = Game.load(message.chat.id)
-        if (game is None or game.is_ready() is False):
-            raise GameError(ERROR_GAME_NOT_EXIST)
-
-        if (game.is_player_in_game(player) is False):
-            raise GameError(ERROR_PLAYER_NOT_IN_GAME)
-
+        player = Player.load_or_error(message.from_id)
+        game = Game.load_last_or_error(message.chat.id)
         game.leave(player)
         game.save()
 
@@ -198,14 +169,8 @@ async def start_game(message: types.Message):
         if(Game.get_stared_game(message.chat.id) is not None):
             return
 
-        game = Game.load(message.chat.id)
-        if (game is None or game.is_ready() is False):
-            raise GameError(ERROR_GAME_NOT_EXIST)
-
-        if (len(game.get_participators()) == 0):
-            raise GameError(ERROR_GAME_NOT_ENOUGH_PLAYERS)
-
-        rounds = game.start()
+        game = Game.load_last_or_error(message.chat.id)
+        game_rounds = game.start()
         game.save()
 
         game_message = await message.reply(
@@ -213,7 +178,7 @@ async def start_game(message: types.Message):
             parse_mode=types.ParseMode.HTML,
         )
 
-        for round in rounds():
+        for round in game_rounds():
             time.sleep(MESSAGE_DELAY_SEC)
             await game_message.edit_text(
                 GameRenderer.render_game_round_tpl(round),
@@ -253,10 +218,7 @@ async def stop_game(message: types.Message):
         if(Game.get_stared_game(message.chat.id) is not None):
             return
 
-        game = Game.load(message.chat.id)
-        if (game is None):
-            raise GameError(ERROR_GAME_NOT_EXIST)
-
+        game = Game.load_last_or_error(message.chat.id)
         game.stop()
         game.save()
 

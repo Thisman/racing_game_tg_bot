@@ -6,11 +6,11 @@ from modules.commands import START_GAME_COMMAND, \
     STOP_GAME_COMMAND, JOIN_GAME_COMMAND, LEAVE_GAME_COMMAND
 
 ICONS = [
-    emoji.emojize(":cat:", language='alias'),
-    emoji.emojize(":hamster:", language='alias'),
-    emoji.emojize(":horse:", language='alias'),
+    emoji.emojize(":snail:", language='alias'),
+    emoji.emojize(":rat:", language='alias'),
+    emoji.emojize(":rooster:", language='alias'),
     emoji.emojize(":wolf:", language='alias'),
-    emoji.emojize(":sheep:", language='alias')
+    emoji.emojize(":pig:", language='alias')
 ]
 
 class GameRenderer:
@@ -19,16 +19,16 @@ class GameRenderer:
         return f'''
 Создана новая игра!
 
-Чтобы поставить ставку, выполните одну из команд ниже
+Чтобы войти в игру, выполните одну из команд ниже
 /{JOIN_GAME_COMMAND}_0 - поставить на {GameRenderer.render_horse_icon(0)}
 /{JOIN_GAME_COMMAND}_1 - поставить на {GameRenderer.render_horse_icon(1)}
 /{JOIN_GAME_COMMAND}_2 - поставить на {GameRenderer.render_horse_icon(2)}
 /{JOIN_GAME_COMMAND}_3 - поставить на {GameRenderer.render_horse_icon(3)}
 /{JOIN_GAME_COMMAND}_4 - поставить на {GameRenderer.render_horse_icon(4)}
 
-Чтобы покинуть игру, выполните команду /{LEAVE_GAME_COMMAND}
-Чтобы начать игру, выполните команду /{START_GAME_COMMAND}
-Чтобы закончить игру, выполните команду /{STOP_GAME_COMMAND}
+/{LEAVE_GAME_COMMAND} - покинуть игру
+/{START_GAME_COMMAND} - начать игру
+/{STOP_GAME_COMMAND}  - остановить и удалить игру
         '''
 
     @staticmethod
@@ -40,13 +40,12 @@ class GameRenderer:
         else:
             players_len = len(game.get_participators())
             return f'''
-Есть активная игра, кол-во игроков {players_len}
-Банк игры {players_len * 10}
+Есть активная игра, кол-во игроков: {players_len}
             '''
 
     @staticmethod
     def render_player_join_success_tpl(player: Player, horse_id: int):
-        return f'<i>Игрок {player.get_name()} поставил на участника {GameRenderer.render_horse_icon(horse_id)}!</i>'
+        return f'<i>Игрок {player.get_name()} поставил на участника {GameRenderer.render_horse_icon(horse_id)}</i>'
 
     @staticmethod
     def render_player_leave_success__plt(player: Player):

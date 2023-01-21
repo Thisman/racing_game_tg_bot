@@ -2,7 +2,7 @@ from aiogram import types
 
 from modules.db import players_collection
 from modules.error import GameError, ERROR_PLAYER_ALREADY_EXIST, \
-    ERROR_REGISTER_PLAYER
+    ERROR_REGISTER_PLAYER, ERROR_PLAYER_NOT_EXIST
 
 class PlayerData:
     name: str
@@ -36,6 +36,14 @@ class Player:
             return None
         else:
             return Player(data)
+
+    @staticmethod
+    def load_or_error(user_id: int):
+        player = Player.load(user_id)
+        if (player is None):
+            raise GameError(ERROR_PLAYER_NOT_EXIST)
+        else:
+            return player
 
 
     def __init__(self, data: PlayerData):
