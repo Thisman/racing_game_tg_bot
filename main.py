@@ -189,7 +189,7 @@ async def start_game(message: types.Message):
         game.save()
 
         # TODO: подумать как убрать этот ужас.
-        winner_horses_ids = map(lambda data: data['id'], game.get_winner_horses())
+        winner_horses_ids = list(map(lambda data: data['id'], game.get_winner_horses()))
         winner_players = []
         for [participator, bet] in game.get_participators():
             player = Player.load(participator)
