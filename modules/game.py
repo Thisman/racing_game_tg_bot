@@ -63,6 +63,7 @@ class Game:
         else:
             return game
 
+
     def __init__(self, data: GameData):
         self.data = data
         self.games_collection = games_collection
@@ -138,8 +139,3 @@ class Game:
             )
             if (horse['distance'] > GAME_CIRCLE_FINISH):
                 horse['is_winner'] = True
-
-
-def check_started_game_in_chat(chat_id: int) -> bool:
-    game = Game.load(chat_id)
-    return game is not None and game.is_started()

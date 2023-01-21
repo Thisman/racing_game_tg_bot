@@ -29,6 +29,19 @@ API_TOKEN = sys.argv[1]
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
+async def handler_game_error(message: types.Message, error: GameError):
+    await message.reply(
+        BotRenderer.render_error_tpl(error),
+        parse_mode=types.ParseMode.HTML
+    )
+
+async def handler_error(message: types.Message, error):
+    print(error)
+    await message.reply(
+        BotRenderer.render_error_tpl(ERROR_UNEXPECTED),
+        parse_mode=types.ParseMode.HTML
+    )
+
 @dp.message_handler(commands=[START_COMMAND])
 async def start(message: types.Message):
     await message.reply(
@@ -54,16 +67,9 @@ async def info(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
-        await message.reply(
-            BotRenderer.render_error_tpl(error),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_game_error(message, error)
     except Exception as error:
-        print(error)
-        await message.reply(
-            BotRenderer.render_error_tpl(ERROR_UNEXPECTED),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_error(message, error)
 
 @dp.message_handler(commands=[RULES_COMMAND])
 async def rules(message: types.Message):
@@ -73,16 +79,9 @@ async def rules(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
-        await message.reply(
-            BotRenderer.render_error_tpl(error),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_game_error(message, error)
     except Exception as error:
-        print(error)
-        await message.reply(
-            BotRenderer.render_error_tpl(ERROR_UNEXPECTED),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_error(message, error)
 
 
 @dp.message_handler(commands=[REGISTER_PLAYER_COMMAND])
@@ -95,16 +94,9 @@ async def register_player(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
-        await message.reply(
-            BotRenderer.render_error_tpl(error),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_game_error(message, error)
     except Exception as error:
-        print(error)
-        await message.reply(
-            BotRenderer.render_error_tpl(ERROR_UNEXPECTED),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_error(message, error)
 
 
 @dp.message_handler(commands=[REGISTER_GAME_COMMAND])
@@ -120,16 +112,9 @@ async def register_game(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
-        await message.reply(
-            BotRenderer.render_error_tpl(error),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_game_error(message, error)
     except Exception as error:
-        print(error)
-        await message.reply(
-            BotRenderer.render_error_tpl(ERROR_UNEXPECTED),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_error(message, error)
 
 @dp.message_handler(commands=[
     JOIN_GAME_COMMAND + '_0',
@@ -172,16 +157,9 @@ async def join_game(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
-        await message.reply(
-            BotRenderer.render_error_tpl(error),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_game_error(message, error)
     except Exception as error:
-        print(error)
-        await message.reply(
-            BotRenderer.render_error_tpl(ERROR_UNEXPECTED),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_error(message, error)
 
 @dp.message_handler(commands=[LEAVE_GAME_COMMAND])
 async def leave_game(message: types.Message):
@@ -208,16 +186,9 @@ async def leave_game(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
-        await message.reply(
-            BotRenderer.render_error_tpl(error),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_game_error(message, error)
     except Exception as error:
-        print(error)
-        await message.reply(
-            BotRenderer.render_error_tpl(ERROR_UNEXPECTED),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_error(message, error)
 
 @dp.message_handler(commands=[START_GAME_COMMAND])
 async def start_game(message: types.Message):
@@ -250,6 +221,7 @@ async def start_game(message: types.Message):
         game.stop()
         game.save()
 
+        # TODO: подумать как убрать этот ужас.
         winner_horses_ids = map(lambda data: data['id'], game.get_winner_horses())
         winner_players = []
         for [participator, bet] in game.get_participators():
@@ -268,18 +240,10 @@ async def start_game(message: types.Message):
             GameRenderer.render_game_end_tpl(game.get_horses(), winner_players),
             parse_mode=types.ParseMode.HTML,
         )
-        pass
     except GameError as error:
-        await message.reply(
-            BotRenderer.render_error_tpl(error),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_game_error(message, error)
     except Exception as error:
-        print(error)
-        await message.reply(
-            BotRenderer.render_error_tpl(ERROR_UNEXPECTED),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_error(message, error)
 
 @dp.message_handler(commands=[STOP_GAME_COMMAND])
 async def stop_game(message: types.Message):
@@ -299,16 +263,9 @@ async def stop_game(message: types.Message):
             parse_mode=types.ParseMode.HTML
         )
     except GameError as error:
-        await message.reply(
-            BotRenderer.render_error_tpl(error),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_game_error(message, error)
     except Exception as error:
-        print(error)
-        await message.reply(
-            BotRenderer.render_error_tpl(ERROR_UNEXPECTED),
-            parse_mode=types.ParseMode.HTML
-        )
+        await handler_error(message, error)
 
 
 if __name__ == '__main__':
