@@ -38,7 +38,7 @@ class GameRenderer:
 Нет активной игры
             '''
         else:
-            players_len = len(game.get_participator())
+            players_len = len(game.get_participators())
             return f'''
 Есть активная игра, кол-во игроков {players_len}
 Банк игры {players_len * 10}

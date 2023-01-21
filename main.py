@@ -25,6 +25,7 @@ if(len(sys.argv) == 1):
     exit(1)
 
 API_TOKEN = sys.argv[1]
+MESSAGE_DELAY_SEC = 1.5
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
@@ -58,14 +59,15 @@ async def help(message: types.Message):
 
 @dp.message_handler(commands=[INFO_COMMAND])
 async def info(message: types.Message):
-    try:
-        player = Player.load(message.from_id)
-        game = Game.load(message.chat.id)
+    player = Player.load(message.from_id)
+    game = Game.load(message.chat.id)
 
-        await message.reply(
-            BotRenderer.render_info_tpl(player, game),
-            parse_mode=types.ParseMode.HTML
-        )
+    await message.reply(
+        BotRenderer.render_info_tpl(player, game),
+        parse_mode=types.ParseMode.HTML
+    )
+    try:
+        pass
     except GameError as error:
         await handler_game_error(message, error)
     except Exception as error:
@@ -212,7 +214,7 @@ async def start_game(message: types.Message):
         )
 
         for round in rounds():
-            time.sleep(1.5)
+            time.sleep(MESSAGE_DELAY_SEC)
             await game_message.edit_text(
                 GameRenderer.render_game_round_tpl(round),
                 parse_mode=types.ParseMode.HTML,
@@ -252,7 +254,7 @@ async def stop_game(message: types.Message):
             return
 
         game = Game.load(message.chat.id)
-        if (game is None or game.is_ready() is False):
+        if (game is None):
             raise GameError(ERROR_GAME_NOT_EXIST)
 
         game.stop()
