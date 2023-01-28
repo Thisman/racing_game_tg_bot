@@ -37,6 +37,13 @@ class Game:
         games_collection.insert_one({
             'players': [],
             'chat_id': chat_id,
+            'tracks': [
+                { 'distance': 0, 'is_winner': False, 'id': 0 },
+                { 'distance': 0, 'is_winner': False, 'id': 1  },
+                { 'distance': 0, 'is_winner': False, 'id': 2  },
+                { 'distance': 0, 'is_winner': False, 'id': 3  },
+                { 'distance': 0, 'is_winner': False, 'id': 4  },
+            ],
             'status': GAME_READY_STATUS,
             'time_create': datetime.now(),
         })
@@ -76,13 +83,6 @@ class Game:
     def __init__(self, data: GameData):
         self.data = data
         self.games_collection = games_collection
-        self.tracks: list[GameTrack] = [
-            { 'distance': 0, 'is_winner': False, 'id': 0 },
-            { 'distance': 0, 'is_winner': False, 'id': 1  },
-            { 'distance': 0, 'is_winner': False, 'id': 2  },
-            { 'distance': 0, 'is_winner': False, 'id': 3  },
-            { 'distance': 0, 'is_winner': False, 'id': 4  },
-        ]
 
     def save(self):
         game_id = self.data['_id']
@@ -113,7 +113,7 @@ class Game:
         return self.data['players']
 
     def get_tracks(self) -> list[GameTrack]:
-        return self.tracks
+        return self.data['tracks']
 
     def get_winner_tracks(self) -> list[GameTrack]:
         return list(filter(lambda horse: horse['is_winner'] is True, self.get_tracks()))
@@ -151,9 +151,9 @@ class Game:
         def rounds():
             while(len(self.get_winner_tracks()) == 0):
                 self.__next_round()
-                yield self.tracks
+                yield self.data['tracks']
 
-            return self.tracks
+            return self.data['tracks']
 
         return rounds
 
@@ -164,7 +164,7 @@ class Game:
         self.data['status'] = GAME_FINISHED_STATUS
 
     def __next_round(self):
-        for track in self.tracks:
+        for track in self.data['tracks']:
             track['distance'] += random.randint(
                 GAME_CIRCLE_MIN_HORSE_STEP,
                 GAME_CIRCLE_MAX_HORSE_STEP

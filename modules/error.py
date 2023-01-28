@@ -1,7 +1,7 @@
 from aiogram import types
 
 from modules.commands import REGISTER_PLAYER_COMMAND, \
-    REGISTER_GAME_COMMAND, LEAVE_GAME_COMMAND, STOP_GAME_COMMAND
+    NEW_GAME_COMMAND, LEAVE_GAME_COMMAND, STOP_GAME_COMMAND
 
 ERROR_UNEXPECTED = 'Произошла ошибка!\nПопробуйте снова!'
 
@@ -13,7 +13,7 @@ ERROR_PLAYER_NOT_IN_GAME = f'Игрок уже не участвует в игр
 
 ERROR_REGISTER_GAME = 'Не получилось создать игру!\nПопробуйте еще раз!'
 ERROR_GAME_ALREADY_EXIST = f'Игра уже создана!\nЧтобы остановить ее, выполните команду /{STOP_GAME_COMMAND}'
-ERROR_READY_GAME_NOT_EXIST = f'Нет открытой игры!\nЧтобы запустить игру, выполните команду /{REGISTER_GAME_COMMAND}'
+ERROR_READY_GAME_NOT_EXIST = f'Нет открытой игры!\nЧтобы запустить игру, выполните команду /{NEW_GAME_COMMAND}'
 ERROR_GAME_NOT_ENOUGH_PLAYERS = 'Нельзя начинать игру без игроков!'
 ERROR_NOT_ENOUGH_PLAYER_BANK = 'Недостаточно средств для игры!'
 

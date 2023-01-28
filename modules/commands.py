@@ -5,7 +5,7 @@ INFO_COMMAND = 'info'
 
 REGISTER_PLAYER_COMMAND = 'register_player'
 
-REGISTER_GAME_COMMAND = 'register_game'
+NEW_GAME_COMMAND = 'new_game'
 JOIN_GAME_COMMAND = 'join_game'
 LEAVE_GAME_COMMAND = 'leave_game'
 START_GAME_COMMAND = 'start_game'

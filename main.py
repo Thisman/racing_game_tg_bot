@@ -7,7 +7,7 @@ from modules.player import Player
 from modules.game import Game
 from modules.commands import START_COMMAND, RULES_COMMAND, \
     HELP_COMMAND, INFO_COMMAND, REGISTER_PLAYER_COMMAND, \
-    REGISTER_GAME_COMMAND, JOIN_GAME_COMMAND, \
+    NEW_GAME_COMMAND, JOIN_GAME_COMMAND, \
     LEAVE_GAME_COMMAND, START_GAME_COMMAND, \
     STOP_GAME_COMMAND
 from modules.error import GameError, ERROR_UNEXPECTED, \
@@ -92,7 +92,7 @@ async def register_player(message: types.Message):
         await handler_error(message, error)
 
 
-@dp.message_handler(commands=[REGISTER_GAME_COMMAND])
+@dp.message_handler(commands=[NEW_GAME_COMMAND])
 async def register_game(message: types.Message):
     try:
         if(Game.load_stared_game(message.chat.id) is not None):

@@ -1,8 +1,7 @@
 from modules.player import Player
 from modules.game import Game
 from modules.commands import RULES_COMMAND, \
-    HELP_COMMAND, INFO_COMMAND, REGISTER_PLAYER_COMMAND, \
-    REGISTER_GAME_COMMAND
+    HELP_COMMAND, INFO_COMMAND, NEW_GAME_COMMAND
 
 from renderers.game_renderer import GameRenderer
 from renderers.player_renderer import PlayerRenderer
@@ -41,8 +40,7 @@ class BotRenderer:
 /{HELP_COMMAND} - Список команд
 /{INFO_COMMAND} - Информация о банке игрока и статусе игры
 
-/{REGISTER_PLAYER_COMMAND} - Зарегистрировать игрока
-/{REGISTER_GAME_COMMAND} - Создать новую игру
+/{NEW_GAME_COMMAND} - Создать новую игру
         '''
 
     @staticmethod
