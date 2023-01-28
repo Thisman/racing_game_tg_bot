@@ -95,7 +95,7 @@ async def register_player(message: types.Message):
 @dp.message_handler(commands=[REGISTER_GAME_COMMAND])
 async def register_game(message: types.Message):
     try:
-        if(Game.get_stared_game(message.chat.id) is not None):
+        if(Game.load_stared_game(message.chat.id) is not None):
             return
 
         Game.register(message.chat.id)
@@ -118,7 +118,7 @@ async def register_game(message: types.Message):
 ])
 async def join_game(message: types.Message):
     try:
-        if(Game.get_stared_game(message.chat.id) is not None):
+        if(Game.load_stared_game(message.chat.id) is not None):
             return
 
         player = Player.load_or_error(message.from_id)
@@ -146,7 +146,7 @@ async def join_game(message: types.Message):
 @dp.message_handler(commands=[LEAVE_GAME_COMMAND])
 async def leave_game(message: types.Message):
     try:
-        if(Game.get_stared_game(message.chat.id) is not None):
+        if(Game.load_stared_game(message.chat.id) is not None):
             return
 
         player = Player.load_or_error(message.from_id)
@@ -166,7 +166,7 @@ async def leave_game(message: types.Message):
 @dp.message_handler(commands=[START_GAME_COMMAND])
 async def start_game(message: types.Message):
     try:
-        if(Game.get_stared_game(message.chat.id) is not None):
+        if(Game.load_stared_game(message.chat.id) is not None):
             return
 
         game = Game.load_last_or_error(message.chat.id)
@@ -174,7 +174,7 @@ async def start_game(message: types.Message):
         game.save()
 
         game_message = await message.reply(
-            GameRenderer.render_game_start_tpl(game.get_horses()),
+            GameRenderer.render_game_start_tpl(game.get_tracks()),
             parse_mode=types.ParseMode.HTML,
         )
 
@@ -189,9 +189,9 @@ async def start_game(message: types.Message):
         game.save()
 
         # TODO: подумать как убрать этот ужас.
-        winner_horses_ids = list(map(lambda data: data['id'], game.get_winner_horses()))
+        winner_horses_ids = list(map(lambda data: data['id'], game.get_winner_tracks()))
         winner_players = []
-        for [participator, bet] in game.get_participators():
+        for [participator, bet] in game.get_players():
             player = Player.load(participator)
             if (player is None):
                 pass
@@ -204,7 +204,7 @@ async def start_game(message: types.Message):
             player.save()
 
         await game_message.edit_text(
-            GameRenderer.render_game_end_tpl(game.get_horses(), winner_players),
+            GameRenderer.render_game_end_tpl(game.get_tracks(), winner_players),
             parse_mode=types.ParseMode.HTML,
         )
     except GameError as error:
@@ -215,7 +215,7 @@ async def start_game(message: types.Message):
 @dp.message_handler(commands=[STOP_GAME_COMMAND])
 async def stop_game(message: types.Message):
     try:
-        if(Game.get_stared_game(message.chat.id) is not None):
+        if(Game.load_stared_game(message.chat.id) is not None):
             return
 
         game = Game.load_last_or_error(message.chat.id)
