@@ -95,7 +95,7 @@ async def register_player(message: types.Message):
 @dp.message_handler(commands=[NEW_GAME_COMMAND])
 async def register_game(message: types.Message):
     try:
-        if(Game.load_stared_game(message.chat.id) is not None):
+        if(Game.load_started_game(message.chat.id) is not None):
             return
 
         Game.register(message.chat.id)
@@ -118,7 +118,7 @@ async def register_game(message: types.Message):
 ])
 async def join_game(message: types.Message):
     try:
-        if(Game.load_stared_game(message.chat.id) is not None):
+        if(Game.load_started_game(message.chat.id) is not None):
             return
 
         player = Player.load_or_error(message.from_id)
@@ -146,7 +146,7 @@ async def join_game(message: types.Message):
 @dp.message_handler(commands=[LEAVE_GAME_COMMAND])
 async def leave_game(message: types.Message):
     try:
-        if(Game.load_stared_game(message.chat.id) is not None):
+        if(Game.load_started_game(message.chat.id) is not None):
             return
 
         player = Player.load_or_error(message.from_id)
@@ -166,7 +166,7 @@ async def leave_game(message: types.Message):
 @dp.message_handler(commands=[START_GAME_COMMAND])
 async def start_game(message: types.Message):
     try:
-        if(Game.load_stared_game(message.chat.id) is not None):
+        if(Game.load_started_game(message.chat.id) is not None):
             return
 
         game = Game.load_last_or_error(message.chat.id)
@@ -215,7 +215,7 @@ async def start_game(message: types.Message):
 @dp.message_handler(commands=[STOP_GAME_COMMAND])
 async def stop_game(message: types.Message):
     try:
-        if(Game.load_stared_game(message.chat.id) is not None):
+        if(Game.load_started_game(message.chat.id) is not None):
             return
 
         game = Game.load_last_or_error(message.chat.id)

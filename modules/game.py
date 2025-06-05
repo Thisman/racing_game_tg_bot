@@ -72,7 +72,7 @@ class Game:
             return last_game
 
     @staticmethod
-    def load_stared_game(chat_id: int):
+    def load_started_game(chat_id: int):
         game = Game.load_last(chat_id)
         if (game is None or game.is_started() is False):
             return None
